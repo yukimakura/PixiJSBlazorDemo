@@ -1,0 +1,41 @@
+﻿@page "/"
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Index</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+last clickobj : @(lastClickData?.ToString() ?? "none")
+<button class="btn btn-primary" @onclick="OnClick">Click me</button>
+<div @ref=canvasDiv />
+
+@code {
+    private ElementReference canvasDiv;
+    private objectData? lastClickData = null;
+
+    private int cnt = 0;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await jsRuntime.InvokeVoidAsync("PixiJS.PixiApp", canvasDiv, DotNetObjectReference.Create(this));
+        }
+    }
+
+    private async Task OnClick()
+    {
+        await jsRuntime.InvokeVoidAsync("PixiJS.AddBox", cnt / 15, "box", cnt, cnt, 10, 10);
+        cnt += 15;
+    }
+
+    private record objectData(int id, string typename);
+    [JSInvokable]
+    public async Task OnObjectClick(string jsonraw)
+    {
+        Console.WriteLine(jsonraw);
+        lastClickData = System.Text.Json.JsonSerializer.Deserialize<objectData>(jsonraw);
+        StateHasChanged();
+    }
+}
